@@ -42,7 +42,29 @@ logs/
 # Coverage
 htmlcov/
 .coverage
+.coverage.*
 coverage/
+
+# Python tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+.tox/
+.nox/
+
+# JavaScript tooling caches
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Generic cache/temp
+.cache/
+tmp/
+temp/
 
 # Misc
 *.bak
