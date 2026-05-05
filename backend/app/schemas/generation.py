@@ -11,6 +11,7 @@ class AIProviderEnum(str, Enum):
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     GOOGLE_GEMINI = "google_gemini"
+    CUSTOM = "custom"
 
 
 # =============================================================================
@@ -32,6 +33,16 @@ class GenerationRunRequest(BaseModel):
         default=None,
         max_length=2000,
         description="Additional instructions to append to the generation prompt"
+    )
+    custom_endpoint: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description="Custom provider endpoint (OpenAI-compatible base URL)"
+    )
+    custom_api_key: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description="Custom provider API key"
     )
 
     class Config:
@@ -61,6 +72,8 @@ class RegenerationRequest(BaseModel):
         description="Notes about what to improve in the regeneration"
     )
     fallback_provider: Optional[AIProviderEnum] = None
+    custom_endpoint: Optional[str] = Field(default=None, max_length=500)
+    custom_api_key: Optional[str] = Field(default=None, max_length=500)
 
     class Config:
         json_schema_extra = {

@@ -42,6 +42,8 @@ class GenerationService:
         max_tokens: int = 4096,
         fallback_provider: Optional[str] = None,
         custom_instructions: Optional[str] = None,
+        custom_endpoint: Optional[str] = None,
+        custom_api_key: Optional[str] = None,
     ) -> dict:
         """
         Full generation pipeline for a content item.
@@ -96,6 +98,8 @@ class GenerationService:
                 "temperature": temperature,
                 "max_tokens": max_tokens,
                 "fallback_provider": fallback_provider,
+                "custom_endpoint": custom_endpoint,
+                "has_custom_api_key": bool(custom_api_key),
             },
             status=GenerationStatus.RUNNING,
             started_at=datetime.utcnow(),
@@ -110,6 +114,8 @@ class GenerationService:
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
+            custom_endpoint=custom_endpoint,
+            custom_api_key=custom_api_key,
         )
 
         response = await provider_manager.generate(
@@ -201,6 +207,8 @@ class GenerationService:
         provider: str,
         model: str,
         revision_notes: Optional[str] = None,
+        custom_endpoint: Optional[str] = None,
+        custom_api_key: Optional[str] = None,
         **kwargs,
     ) -> dict:
         """
@@ -220,6 +228,8 @@ class GenerationService:
             provider=provider,
             model=model,
             custom_instructions=custom_instructions,
+            custom_endpoint=custom_endpoint,
+            custom_api_key=custom_api_key,
             **kwargs,
         )
 

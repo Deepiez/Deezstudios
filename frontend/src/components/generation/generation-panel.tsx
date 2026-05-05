@@ -13,6 +13,8 @@ interface GenerationPanelProps {
   onGenerationComplete?: (result: any) => void;
 }
 
+const CUSTOM_PROVIDER_STORAGE_KEY = "custom_provider_config";
+
 const MODEL_OPTIONS: Record<string, { value: string; label: string }[]> = {
   openai: [
     { value: "gpt-4o", label: "GPT-4o (Recommended)" },
@@ -29,6 +31,7 @@ const MODEL_OPTIONS: Record<string, { value: string; label: string }[]> = {
     { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
     { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Fastest)" },
   ],
+  custom: [],
 };
 
 export function GenerationPanel({
@@ -44,6 +47,9 @@ export function GenerationPanel({
   const [temperature, setTemperature] = useState(0.7);
   const [maxTokens, setMaxTokens] = useState(4096);
   const [customInstructions, setCustomInstructions] = useState("");
+  const [customEndpoint, setCustomEndpoint] = useState("");
+  const [customApiKey, setCustomApiKey] = useState("");
+  const [customModel, setCustomModel] = useState("");
   const [revisionNotes, setRevisionNotes] = useState("");
   const [isRegenMode, setIsRegenMode] = useState(false);
   const [defaultsLoaded, setDefaultsLoaded] = useState(false);
@@ -52,12 +58,40 @@ export function GenerationPanel({
     fetchProviders();
     // Load defaults for this content type
     loadDefaults();
+    loadCustomProviderConfig();
   }, []);
+
+  const loadCustomProviderConfig = () => {
+    try {
+      const rawConfig = localStorage.getItem(CUSTOM_PROVIDER_STORAGE_KEY);
+      if (!rawConfig) return;
+
+      const config = JSON.parse(rawConfig);
+      if (typeof config.endpoint === "string") setCustomEndpoint(config.endpoint);
+      if (typeof config.apiKey === "string") setCustomApiKey(config.apiKey);
+      if (typeof config.model === "string") setCustomModel(config.model);
+    } catch {
+      // Ignore malformed local config
+    }
+  };
+
+  const persistCustomProviderConfig = (endpoint: string, apiKey: string, modelName: string) => {
+    if (!endpoint.trim() || !apiKey.trim() || !modelName.trim()) return;
+    localStorage.setItem(
+      CUSTOM_PROVIDER_STORAGE_KEY,
+      JSON.stringify({
+        endpoint: endpoint.trim(),
+        apiKey: apiKey.trim(),
+        model: modelName.trim(),
+      })
+    );
+  };
 
   const loadDefaults = async () => {
     if (defaultsLoaded) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/generation/defaults/${contentType}`);
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+      const res = await fetch(`${apiBase}/generation/defaults/${contentType}`);
       if (res.ok) {
         const data = await res.json();
         if (data.provider) setProvider(data.provider);
@@ -78,13 +112,21 @@ export function GenerationPanel({
   }, [provider]);
 
   const handleGenerate = async () => {
+    const selectedModel = provider === "custom" ? customModel.trim() : model;
+
+    if (provider === "custom") {
+      persistCustomProviderConfig(customEndpoint, customApiKey, selectedModel);
+    }
+
     const request = {
       content_item_id: contentItemId,
       provider,
-      model,
+      model: selectedModel,
       temperature,
       max_tokens: maxTokens,
       custom_instructions: customInstructions || null,
+      custom_endpoint: provider === "custom" ? customEndpoint.trim() || null : null,
+      custom_api_key: provider === "custom" ? customApiKey.trim() || null : null,
     };
 
     let genResult;
@@ -105,6 +147,10 @@ export function GenerationPanel({
   const availableProviders = providers
     .filter((p) => p.configured)
     .map((p) => ({ value: p.provider, label: p.provider.replace("_", " ").toUpperCase() }));
+
+  if (providers.length > 0 && !availableProviders.find((p) => p.value === "custom")) {
+    availableProviders.push({ value: "custom", label: "CUSTOM" });
+  }
 
   const currentModels = MODEL_OPTIONS[provider] || [];
 
@@ -141,18 +187,46 @@ export function GenerationPanel({
                     { value: "openai", label: "OpenAI" },
                     { value: "anthropic", label: "Anthropic" },
                     { value: "google_gemini", label: "Google Gemini" },
+                    { value: "custom", label: "Custom" },
                   ]
             }
             value={provider}
             onChange={(e) => setProvider(e.target.value)}
           />
-          <Select
-            label="Model"
-            options={currentModels}
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-          />
+          {provider === "custom" ? (
+            <input
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              placeholder="Model (contoh: gpt-4o-mini)"
+              value={customModel}
+              onChange={(e) => setCustomModel(e.target.value)}
+            />
+          ) : (
+            <Select
+              label="Model"
+              options={currentModels}
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+            />
+          )}
         </div>
+
+        {provider === "custom" && (
+          <div className="grid grid-cols-1 gap-4">
+            <input
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              placeholder="Custom Endpoint (contoh: https://api.openai.com/v1)"
+              value={customEndpoint}
+              onChange={(e) => setCustomEndpoint(e.target.value)}
+            />
+            <input
+              type="password"
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              placeholder="Custom API Key"
+              value={customApiKey}
+              onChange={(e) => setCustomApiKey(e.target.value)}
+            />
+          </div>
+        )}
 
         {/* Advanced Settings */}
         <details className="group">

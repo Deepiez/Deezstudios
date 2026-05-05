@@ -62,6 +62,13 @@ async def run_generation(
                    f"Available providers: {available}",
         )
 
+    if request.provider.value == "custom":
+        if not request.custom_endpoint or not request.custom_api_key or not request.model:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Custom provider requires custom_endpoint, custom_api_key, and model.",
+            )
+
     # Run generation
     service = GenerationService(db)
     result = await service.generate_content(
@@ -72,6 +79,8 @@ async def run_generation(
         max_tokens=request.max_tokens,
         fallback_provider=request.fallback_provider.value if request.fallback_provider else None,
         custom_instructions=request.custom_instructions,
+        custom_endpoint=request.custom_endpoint,
+        custom_api_key=request.custom_api_key,
     )
 
     if not result["success"]:
@@ -118,6 +127,14 @@ async def regenerate_content(
         )
 
     service = GenerationService(db)
+
+    if request.provider.value == "custom":
+        if not request.custom_endpoint or not request.custom_api_key or not request.model:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Custom provider requires custom_endpoint, custom_api_key, and model.",
+            )
+
     result = await service.regenerate_content(
         content_item_id=request.content_item_id,
         provider=request.provider.value,
@@ -126,6 +143,8 @@ async def regenerate_content(
         max_tokens=request.max_tokens,
         revision_notes=request.revision_notes,
         fallback_provider=request.fallback_provider.value if request.fallback_provider else None,
+        custom_endpoint=request.custom_endpoint,
+        custom_api_key=request.custom_api_key,
     )
 
     if not result["success"]:
@@ -284,6 +303,8 @@ async def run_generation_async(
         max_tokens=request.max_tokens,
         fallback_provider=request.fallback_provider.value if request.fallback_provider else None,
         custom_instructions=request.custom_instructions,
+        custom_endpoint=request.custom_endpoint,
+        custom_api_key=request.custom_api_key,
     )
 
     return {

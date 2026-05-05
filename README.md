@@ -400,7 +400,8 @@ Base URL: `http://localhost:8000/api/v1`
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `SECRET_KEY` | Yes | Random string for JWT signing + token encryption |
-| `POSTGRES_*` | Yes | Database connection |
+| `DATABASE_URL` | No** | Full PostgreSQL URL (recommended for Supabase) |
+| `POSTGRES_*` | Yes* | Database connection fallback (local/docker) |
 | `REDIS_*` | Yes | Redis connection |
 | `OPENAI_API_KEY` | No* | OpenAI API key |
 | `ANTHROPIC_API_KEY` | No* | Anthropic API key |
@@ -412,6 +413,8 @@ Base URL: `http://localhost:8000/api/v1`
 | `DEFAULT_TIMEZONE` | No | Default: `Asia/Jakarta` |
 
 *Minimal 1 AI provider key harus diisi untuk generation.
+
+**Jika `DATABASE_URL` diisi, backend akan memprioritaskan URL tersebut dan mengabaikan `POSTGRES_*`.
 
 ---
 

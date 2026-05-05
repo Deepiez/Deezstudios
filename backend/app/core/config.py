@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from typing import Optional
 
 
@@ -11,14 +12,36 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
 
     # Database
+    DATABASE_URL_OVERRIDE: Optional[str] = Field(default=None, validation_alias="DATABASE_URL")
+    DATABASE_URL_SYNC_OVERRIDE: Optional[str] = Field(default=None, validation_alias="DATABASE_URL_SYNC")
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = "content_studio"
     POSTGRES_USER: str = "studio_user"
     POSTGRES_PASSWORD: str = "change-this-password"
 
+    @staticmethod
+    def _to_async_url(db_url: str) -> str:
+        if db_url.startswith("postgresql+asyncpg://"):
+            return db_url
+        if db_url.startswith("postgresql://"):
+            return db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        if db_url.startswith("postgres://"):
+            return db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+        return db_url
+
+    @staticmethod
+    def _to_sync_url(db_url: str) -> str:
+        if db_url.startswith("postgresql+asyncpg://"):
+            return db_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+        if db_url.startswith("postgres://"):
+            return db_url.replace("postgres://", "postgresql://", 1)
+        return db_url
+
     @property
     def DATABASE_URL(self) -> str:
+        if self.DATABASE_URL_OVERRIDE:
+            return self._to_async_url(self.DATABASE_URL_OVERRIDE)
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
@@ -26,6 +49,10 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL_SYNC(self) -> str:
+        if self.DATABASE_URL_SYNC_OVERRIDE:
+            return self._to_sync_url(self.DATABASE_URL_SYNC_OVERRIDE)
+        if self.DATABASE_URL_OVERRIDE:
+            return self._to_sync_url(self.DATABASE_URL_OVERRIDE)
         return (
             f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"

@@ -12,6 +12,8 @@ interface GenerationRequest {
   max_tokens?: number;
   fallback_provider?: string | null;
   custom_instructions?: string | null;
+  custom_endpoint?: string | null;
+  custom_api_key?: string | null;
 }
 
 interface RegenerationRequest extends GenerationRequest {

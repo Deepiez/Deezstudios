@@ -14,6 +14,8 @@ class GenerationRequest:
     top_p: float = 1.0
     frequency_penalty: float = 0.0
     presence_penalty: float = 0.0
+    custom_endpoint: Optional[str] = None
+    custom_api_key: Optional[str] = None
 
 
 @dataclass

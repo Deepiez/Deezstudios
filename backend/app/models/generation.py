@@ -18,6 +18,7 @@ class AIProvider(str, enum.Enum):
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     GOOGLE_GEMINI = "google_gemini"
+    CUSTOM = "custom"
     LOCAL = "local"
 
 

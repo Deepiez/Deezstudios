@@ -4,6 +4,7 @@ from app.services.ai_providers.base import BaseAIProvider, GenerationRequest, Ge
 from app.services.ai_providers.openai_provider import OpenAIProvider
 from app.services.ai_providers.anthropic_provider import AnthropicProvider
 from app.services.ai_providers.gemini_provider import GeminiProvider
+from app.services.ai_providers.custom_provider import CustomProvider
 
 
 class ProviderManager:
@@ -22,6 +23,7 @@ class ProviderManager:
             OpenAIProvider(),
             AnthropicProvider(),
             GeminiProvider(),
+            CustomProvider(),
         ]
         for provider in providers:
             self._providers[provider.provider_name] = provider
@@ -45,7 +47,7 @@ class ProviderManager:
         """Get names of providers that are configured and ready."""
         return [
             name for name, provider in self._providers.items()
-            if provider.is_configured()
+            if provider.is_configured() or name == "custom"
         ]
 
     async def generate(
@@ -65,7 +67,7 @@ class ProviderManager:
                 error=f"Provider '{provider_name}' not found.",
             )
 
-        if not provider.is_configured():
+        if not provider.is_configured() and provider_name != "custom":
             # Try fallback if primary is not configured
             if fallback_provider:
                 fallback = self.get_provider(fallback_provider)

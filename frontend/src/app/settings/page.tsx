@@ -6,6 +6,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/input";
 import { useIntegrations } from "@/hooks/use-integrations";
 
 interface YouTubeAccount {
@@ -15,6 +16,8 @@ interface YouTubeAccount {
   is_connected: boolean;
   connected_at: string | null;
 }
+
+const CUSTOM_PROVIDER_STORAGE_KEY = "custom_provider_config";
 
 export default function SettingsPage() {
   const {
@@ -30,10 +33,57 @@ export default function SettingsPage() {
   const [ytAccounts, setYtAccounts] = useState<YouTubeAccount[]>([]);
   const [brandId, setBrandId] = useState("");
   const [channelDetails, setChannelDetails] = useState<Record<string, any> | null>(null);
+  const [customEndpoint, setCustomEndpoint] = useState("");
+  const [customApiKey, setCustomApiKey] = useState("");
+  const [customModel, setCustomModel] = useState("");
+  const [customMessage, setCustomMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadYouTubeStatus();
+    loadCustomProviderConfig();
   }, []);
+
+  const loadCustomProviderConfig = () => {
+    try {
+      const rawConfig = localStorage.getItem(CUSTOM_PROVIDER_STORAGE_KEY);
+      if (!rawConfig) return;
+
+      const config = JSON.parse(rawConfig);
+      if (typeof config.endpoint === "string") setCustomEndpoint(config.endpoint);
+      if (typeof config.apiKey === "string") setCustomApiKey(config.apiKey);
+      if (typeof config.model === "string") setCustomModel(config.model);
+    } catch {
+      // Ignore malformed local config
+    }
+  };
+
+  const handleSaveCustomProvider = () => {
+    setCustomMessage(null);
+
+    if (!customEndpoint.trim() || !customApiKey.trim() || !customModel.trim()) {
+      setCustomMessage("Endpoint, API Key, dan Model wajib diisi.");
+      return;
+    }
+
+    localStorage.setItem(
+      CUSTOM_PROVIDER_STORAGE_KEY,
+      JSON.stringify({
+        endpoint: customEndpoint.trim(),
+        apiKey: customApiKey.trim(),
+        model: customModel.trim(),
+      })
+    );
+
+    setCustomMessage("Custom provider berhasil disimpan di browser ini.");
+  };
+
+  const handleClearCustomProvider = () => {
+    localStorage.removeItem(CUSTOM_PROVIDER_STORAGE_KEY);
+    setCustomEndpoint("");
+    setCustomApiKey("");
+    setCustomModel("");
+    setCustomMessage("Custom provider dihapus dari browser ini.");
+  };
 
   const loadYouTubeStatus = async () => {
     const status = await getYouTubeStatus();
@@ -215,6 +265,60 @@ export default function SettingsPage() {
                   )}
                 </div>
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Custom AI Provider */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Custom AI Provider</h2>
+                <p className="text-sm text-gray-500">
+                  Simpan endpoint, API key, dan model custom untuk dipakai di Generation Panel
+                </p>
+              </div>
+              <Badge variant="success">Local Browser</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Input
+              label="Endpoint"
+              placeholder="https://api.openai.com/v1"
+              value={customEndpoint}
+              onChange={(e) => setCustomEndpoint(e.target.value)}
+            />
+            <Input
+              label="API Key"
+              type="password"
+              placeholder="sk-..."
+              value={customApiKey}
+              onChange={(e) => setCustomApiKey(e.target.value)}
+            />
+            <Input
+              label="Model"
+              placeholder="gpt-4o-mini"
+              value={customModel}
+              onChange={(e) => setCustomModel(e.target.value)}
+            />
+
+            <Textarea
+              label="Catatan"
+              value="Disimpan di localStorage browser ini, bukan di server. Gunakan perangkat pribadi."
+              rows={2}
+              disabled
+            />
+
+            <div className="flex items-center gap-3">
+              <Button onClick={handleSaveCustomProvider}>Save Custom Provider</Button>
+              <Button variant="outline" onClick={handleClearCustomProvider}>
+                Clear
+              </Button>
+            </div>
+
+            {customMessage && (
+              <p className="text-sm text-gray-700">{customMessage}</p>
             )}
           </CardContent>
         </Card>

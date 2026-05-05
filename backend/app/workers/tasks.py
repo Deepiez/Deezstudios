@@ -30,6 +30,8 @@ def run_content_generation_async(
     max_tokens: int = 4096,
     fallback_provider: str = None,
     custom_instructions: str = None,
+    custom_endpoint: str = None,
+    custom_api_key: str = None,
 ) -> dict:
     """
     Background task: Run AI content generation.
@@ -82,6 +84,8 @@ def run_content_generation_async(
                 "temperature": temperature,
                 "max_tokens": max_tokens,
                 "fallback_provider": fallback_provider,
+                "custom_endpoint": custom_endpoint,
+                "has_custom_api_key": bool(custom_api_key),
             },
             status=GenerationStatus.RUNNING,
             started_at=datetime.utcnow(),
@@ -96,6 +100,8 @@ def run_content_generation_async(
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
+            custom_endpoint=custom_endpoint,
+            custom_api_key=custom_api_key,
         )
 
         loop = asyncio.new_event_loop()
